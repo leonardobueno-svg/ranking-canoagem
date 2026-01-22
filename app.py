@@ -5,7 +5,7 @@ import os
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Ranking Nacional CBCa 2025", layout="wide", page_icon="🚣‍♂️")
 
-st.title("🚣‍♂️ Ranking Nacional de Caiaque Cross - CBC")
+st.title("🚣‍♂️ Ranking Nacional de Caiaque Cross - CBCa 2025")
 st.markdown("**Sistema Oficial de Pontuação Unificada**")
 st.markdown("---")
 

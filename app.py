@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Ranking Nacional CBC", layout="wide", page_icon="🚣‍♂️")
+st.set_page_config(page_title="Ranking Nacional CBCa 2025", layout="wide", page_icon="🚣‍♂️")
 
 st.title("🚣‍♂️ Ranking Nacional de Caiaque Cross - CBC")
 st.markdown("**Sistema Oficial de Pontuação Unificada**")

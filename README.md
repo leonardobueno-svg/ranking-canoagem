@@ -1,1 +1,1 @@
-# ranking-canoagem
+# Ranking-Canoagem-Slalom

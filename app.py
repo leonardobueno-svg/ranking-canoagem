@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Ranking Nacional CBC", layout="wide", page_icon="🚣‍♂️")
+st.set_page_config(page_title="Ranking Nacional Canoagem Slalom e Caiaque Cross 2025", layout="wide", page_icon="🚣‍♂️")
 
-st.title("🚣‍♂️ Ranking Nacional de Caiaque Cross - CBC")
+st.title("🚣‍♂️ Ranking Nacional Canoagem Slalom e Caiaque Cross 2025")
 st.markdown("""
 Sistema de pontuação unificada: **Copa Brasil (Peso 1)** + **Campeonato Brasileiro (Peso 2)**.
 """)
@@ -47,16 +47,16 @@ if arquivo:
             
             # --- CÁLCULO DOS PONTOS ---
             # Copa Brasil (Peso 1)
-            df['Pts_Copa_Tomada'] = df['Copa_Tomada'].apply(lambda x: calcular_pontos(x, peso=1))
-            df['Pts_Copa_Combate'] = df['Copa_Combate'].apply(lambda x: calcular_pontos(x, peso=1))
+            df['Copa_Individual'] = df['Copa_Tomada'].apply(lambda x: calcular_pontos(x, peso=1))
+            df['Copa_Cross'] = df['Copa_Combate'].apply(lambda x: calcular_pontos(x, peso=1))
             
             # Brasileiro (Peso 2)
-            df['Pts_BR_Tomada'] = df['Brasileiro_Tomada'].apply(lambda x: calcular_pontos(x, peso=2))
-            df['Pts_BR_Combate'] = df['Brasileiro_Combate'].apply(lambda x: calcular_pontos(x, peso=2))
+            df['BR_Individual'] = df['Brasileiro_Individual'].apply(lambda x: calcular_pontos(x, peso=2))
+            df['BR_Cross'] = df['Brasileiro_Cross'].apply(lambda x: calcular_pontos(x, peso=2))
             
             # TOTAL GERAL
-            df['TOTAL_GERAL'] = (df['Pts_Copa_Tomada'] + df['Pts_Copa_Combate'] + 
-                                 df['Pts_BR_Tomada'] + df['Pts_BR_Combate'])
+            df['TOTAL_GERAL'] = (df['Copa_Individual'] + df['Copa_Cross'] + 
+                                 df['BR_Individual'] + df['BR_Cross'])
             
             # Ordenar Ranking (Maior pontuação primeiro)
             ranking_final = df.sort_values(by='TOTAL_GERAL', ascending=False).reset_index(drop=True)
@@ -67,7 +67,7 @@ if arquivo:
             
             # Tabela Estilizada
             st.dataframe(
-                ranking_final[['Atleta', 'TOTAL_GERAL', 'Pts_Copa_Tomada', 'Pts_Copa_Combate', 'Pts_BR_Tomada', 'Pts_BR_Combate']],
+                ranking_final[['Atleta', 'TOTAL_GERAL', 'Copa_individual', 'Copa_Cross', 'BR_Individual', 'BR_Cross']],
                 column_config={
                     "TOTAL_GERAL": st.column_config.ProgressColumn("Total de Pontos", format="%d", min_value=0, max_value=200),
                 },

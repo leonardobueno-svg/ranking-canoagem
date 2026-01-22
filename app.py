@@ -31,15 +31,15 @@ def calcular_pontos(posicao, peso=1):
         return 0
 
 # --- LEITURA AUTOMÁTICA DO ARQUIVO ---
-if os.path.exists(ARQUIVO_OFICIAL1):
+if os.path.exists(ARQUIVO_OFICIAL):
     try:
-        xls = pd.ExcelFile(ARQUIVO_OFICIAL1)
+        xls = pd.ExcelFile(ARQUIVO_OFICIAL)
         
         st.sidebar.header("Painel de Controle")
         categorias_disponiveis = xls.sheet_names
         categoria_selecionada = st.sidebar.radio("Selecione a Categoria:", categorias_disponiveis)
         
-        df = pd.read_excel(ARQUIVO_OFICIAL1, sheet_name=categoria_selecionada)
+        df = pd.read_excel(ARQUIVO_OFICIAL, sheet_name=categoria_selecionada)
         
         # Limpeza dos nomes das colunas
         df.columns = df.columns.str.strip() 

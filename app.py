@@ -56,7 +56,7 @@ if arquivo:
             
             # TOTAL GERAL
             df['TOTAL_GERAL'] = (df['Copa_Individual'] + df['Copa_Cross'] + 
-                                 df['PBrasileiro_Individual'] + df['Brasileiro_Cross'])
+                                 df['Brasileiro_Individual'] + df['Brasileiro_Cross'])
             
             # Ordenar Ranking (Maior pontuação primeiro)
             ranking_final = df.sort_values(by='TOTAL_GERAL', ascending=False).reset_index(drop=True)

@@ -67,7 +67,7 @@ if arquivo:
             
             # Tabela Estilizada
             st.dataframe(
-                ranking_final[['Atleta', 'TOTAL_GERAL', 'Copa_Individual', 'Copa_Cross', 'PBrasileiro_Individual', 'Brasileiro_Cross']],
+                ranking_final[['Atleta', 'TOTAL_GERAL', 'Copa_Individual', 'Copa_Cross', 'Brasileiro_Individual', 'Brasileiro_Cross']],
                 column_config={
                     "TOTAL_GERAL": st.column_config.ProgressColumn("Total de Pontos", format="%d", min_value=0, max_value=200),
                 },

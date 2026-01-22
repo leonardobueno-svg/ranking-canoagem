@@ -1,98 +1,130 @@
 import streamlit as st
 import pandas as pd
+import os
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Ranking Nacional Canoagem Slalom e Caiaque Cross 2025", layout="wide", page_icon="🚣‍♂️")
+st.set_page_config(page_title="Ranking Nacional CBC", layout="wide", page_icon="🚣‍♂️")
 
-st.title("🚣‍♂️ Ranking Nacional Canoagem Slalom e Caiaque Cross 2025")
+# Título e Subtítulo
+st.title("🚣‍♂️ Ranking Nacional de Caiaque Cross - CBC")
 st.markdown("""
-Sistema de pontuação unificada: **Copa Brasil (Peso 1)** + **Campeonato Brasileiro (Peso 2)**.
+**Regras de Pontuação:**
+*   **Individual (Tomada de Tempo)** e **Cross (Combate)** somam pontos para o ranking.
+*   **Copa Brasil:** Peso 1.
+*   **Campeonato Brasileiro:** Peso 2 (Pontuação dobrada).
 """)
+st.markdown("---")
 
-# --- REGRAS DE PONTUAÇÃO ---
-# Tabela de pontos: 1º=30, 2º=25, 3º=20...
+# --- NOME DO ARQUIVO OFICIAL ---
+# Este arquivo deve estar no seu GitHub junto com este código
+ARQUIVO_OFICIAL = "Dados_Ranking.xlsx"
+
+# --- TABELA DE PONTOS ---
 PONTUACAO = {
     1: 30, 2: 25, 3: 20, 4: 18, 5: 17, 6: 16, 7: 15, 8: 14, 9: 13, 10: 12,
     11: 11, 12: 10, 13: 9, 14: 8, 15: 7, 16: 6, 17: 5, 18: 4, 19: 3, 20: 2, 21: 1
 }
 
 def calcular_pontos(posicao, peso=1):
-    """Converte posição em pontos aplicando o peso"""
+    """Converte posição (1, 2, 3...) em pontos (30, 25, 20...) aplicando o peso."""
     try:
+        # Tratamento para células vazias, textos ou DNS
+        if pd.isna(posicao) or str(posicao).strip() in ['', '-', 'DNS', 'DSQ', 'N/A']:
+            return 0
+        
         pos = int(posicao)
-        pontos_base = PONTUACAO.get(pos, 0)
+        if pos < 1: return 0
+        
+        pontos_base = PONTUACAO.get(pos, 0) # Se for > 21º, ganha 0 pontos
         return pontos_base * peso
     except:
         return 0
 
-# --- UPLOAD DO ARQUIVO MESTRA ---
-st.sidebar.header("Painel de Controle")
-arquivo = st.sidebar.file_uploader("Carregar Planilha Excel (.xlsx)", type=["xlsx"])
-
-if arquivo:
+# --- LÓGICA DO SISTEMA ---
+if os.path.exists(ARQUIVO_OFICIAL):
     try:
-        # Lê o arquivo Excel completo (todas as abas)
-        xls = pd.ExcelFile(arquivo)
+        xls = pd.ExcelFile(ARQUIVO_OFICIAL)
         
-        # Seletor de Categoria
+        # --- BARRA LATERAL (MENU) ---
+        st.sidebar.header("Filtros")
+        st.sidebar.info("Selecione a categoria abaixo para visualizar o ranking atualizado.")
+        
         categorias_disponiveis = xls.sheet_names
-        categoria_selecionada = st.selectbox("Selecione a Categoria:", categorias_disponiveis)
+        categoria_selecionada = st.sidebar.radio("Categorias:", categorias_disponiveis)
         
-        # Carrega os dados da aba selecionada
-        df = pd.read_excel(arquivo, sheet_name=categoria_selecionada)
+        # Lê a aba selecionada
+        df = pd.read_excel(ARQUIVO_OFICIAL, sheet_name=categoria_selecionada)
         
-        # Validação básica de colunas
-        colunas_necessarias = ['Atleta', 'Copa_Tomada', 'Copa_Combate', 'Brasileiro_Tomada', 'Brasileiro_Combate']
-        if all(col in df.columns for col in colunas_necessarias):
+        # Coluna de Total zerada para começar a soma
+        df['TOTAL_GERAL'] = 0
+        
+        # --- PROCESSAMENTO INTELIGENTE DE COLUNAS ---
+        cols_para_exibir = ['Atleta'] # Começamos a lista de exibição com o nome
+        
+        # O sistema percorre todas as colunas do Excel (exceto Atleta)
+        for col in df.columns:
+            if col == 'Atleta':
+                continue
             
-            # --- CÁLCULO DOS PONTOS ---
-            # Copa Brasil (Peso 1)
-            df['Copa_Individual'] = df['Copa_Tomada'].apply(lambda x: calcular_pontos(x, peso=1))
-            df['Copa_Cross'] = df['Copa_Combate'].apply(lambda x: calcular_pontos(x, peso=1))
+            # 1. Define o Peso
+            # Se tiver "Brasileiro" no nome da coluna, multiplica por 2
+            peso = 2 if 'Brasileiro' in col else 1
             
-            # Brasileiro (Peso 2)
-            df['BR_Individual'] = df['Brasileiro_Individual'].apply(lambda x: calcular_pontos(x, peso=2))
-            df['BR_Cross'] = df['Brasileiro_Cross'].apply(lambda x: calcular_pontos(x, peso=2))
+            # 2. Calcula os Pontos dessa coluna
+            nome_col_pontos = f"Pts_{col}" # Cria coluna interna de memória (ex: Pts_Copa_Individual)
+            df[nome_col_pontos] = df[col].apply(lambda x: calcular_pontos(x, peso))
             
-            # TOTAL GERAL
-            df['TOTAL_GERAL'] = (df['Copa_Individual'] + df['Copa_Cross'] + 
-                                 df['BR_Individual'] + df['BR_Cross'])
+            # 3. Soma ao Total Geral
+            df['TOTAL_GERAL'] += df[nome_col_pontos]
             
-            # Ordenar Ranking (Maior pontuação primeiro)
-            ranking_final = df.sort_values(by='TOTAL_GERAL', ascending=False).reset_index(drop=True)
-            ranking_final.index += 1 # Começar do 1º
-            
-            # --- EXIBIÇÃO ---
-            st.subheader(f"🏆 Classificação: {categoria_selecionada}")
-            
-            # Tabela Estilizada
-            st.dataframe(
-                ranking_final[['Atleta', 'TOTAL_GERAL', 'Copa_individual', 'Copa_Cross', 'BR_Individual', 'BR_Cross']],
-                column_config={
-                    "TOTAL_GERAL": st.column_config.ProgressColumn("Total de Pontos", format="%d", min_value=0, max_value=200),
-                },
-                use_container_width=True
-            )
-            
-            # Download
-            csv = ranking_final.to_csv().encode('utf-8')
-            st.download_button(
-                label=f"📥 Baixar Ranking {categoria_selecionada}",
-                data=csv,
-                file_name=f"Ranking_{categoria_selecionada}.csv",
-                mime="text/csv"
-            )
-            
-        else:
-            st.error(f"A aba '{categoria_selecionada}' não tem as colunas corretas. Verifique o modelo.")
-            st.write("Colunas esperadas:", colunas_necessarias)
-            
+            # 4. Adiciona à lista de colunas para mostrar na tabela final
+            cols_para_exibir.append(col)
+
+        # Adiciona o Total no final da lista de exibição
+        cols_para_exibir.insert(1, 'TOTAL_GERAL') # Coloca o Total logo após o nome
+
+        # --- ORDENAÇÃO DO RANKING ---
+        ranking = df.sort_values(by='TOTAL_GERAL', ascending=False).reset_index(drop=True)
+        ranking.index += 1 # Ajusta para o índice começar em 1 (1º lugar)
+        
+        # --- DESTAQUE DOS CAMPEÕES (PÓDIO) ---
+        st.subheader(f"🏆 Pódio Atual: {categoria_selecionada}")
+        top3 = ranking.head(3)
+        col1, col2, col3 = st.columns(3)
+        
+        if len(top3) >= 1: 
+            col2.metric("🥇 LÍDER", top3.iloc[0]['Atleta'], f"{int(top3.iloc[0]['TOTAL_GERAL'])} pts")
+        if len(top3) >= 2: 
+            col1.metric("🥈 2º Lugar", top3.iloc[1]['Atleta'], f"{int(top3.iloc[1]['TOTAL_GERAL'])} pts")
+        if len(top3) >= 3: 
+            col3.metric("🥉 3º Lugar", top3.iloc[2]['Atleta'], f"{int(top3.iloc[2]['TOTAL_GERAL'])} pts")
+        
+        st.markdown("---")
+        
+        # --- TABELA COMPLETA ---
+        st.subheader(f"Classificação Detalhada")
+        
+        # Configuração visual da tabela
+        st.dataframe(
+            ranking[cols_para_exibir],
+            use_container_width=True,
+            height=600,
+            column_config={
+                "TOTAL_GERAL": st.column_config.ProgressColumn(
+                    "Pontuação Total", 
+                    format="%d", 
+                    min_value=0, 
+                    max_value=ranking['TOTAL_GERAL'].max()
+                ),
+                "Atleta": st.column_config.TextColumn("Atleta", width="medium"),
+            }
+        )
+        
     except Exception as e:
-        st.error(f"Erro ao processar o arquivo: {e}")
+        st.error(f"Erro ao processar o arquivo Excel: {e}")
+        st.warning("Dica: Verifique se as colunas do Excel estão com os nomes corretos.")
 
 else:
-    st.info("👆 Por favor, faça o upload da planilha Excel na barra lateral.")
-    st.markdown("### Instruções")
-    st.markdown("1. Crie um Excel com uma aba para cada categoria.")
-    st.markdown("2. Coloque as posições (1, 2, 3...) nas colunas correspondentes.")
-    st.markdown("3. O sistema calcula automaticamente os pesos (x2 para Brasileiro) e gera o ranking.")
+    # Caso o arquivo não exista no GitHub
+    st.error("⚠️ Arquivo de dados não encontrado.")
+    st.info(f"Por favor, faça o upload do arquivo '{ARQUIVO_OFICIAL}' no seu repositório do GitHub.")
